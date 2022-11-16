@@ -63,7 +63,9 @@ func main() {
 			file.NewSource(flagconf),
 		),
 	)
-	defer c.Close()
+	defer func(c config.Config) {
+		_ = c.Close()
+	}(c)
 
 	if err := c.Load(); err != nil {
 		panic(err)
