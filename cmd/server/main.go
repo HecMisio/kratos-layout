@@ -25,17 +25,17 @@ var (
 	Version string
 	// flagconf is the config flag.
 	flagconf string
-
-	id, _ = os.Hostname()
+	// hostname is the name of the host
+	hostname, _ = os.Hostname()
 )
 
 func init() {
-	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
+	flag.StringVar(&flagconf, "conf", ".../../configs", "config path, eg: -conf config.yaml")
 }
 
 func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
 	return kratos.New(
-		kratos.ID(id),
+		kratos.ID(hostname),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
@@ -52,7 +52,7 @@ func main() {
 	logger := log.With(log.NewStdLogger(os.Stdout),
 		"ts", log.DefaultTimestamp,
 		"caller", log.DefaultCaller,
-		"service.id", id,
+		"service.id", hostname,
 		"service.name", Name,
 		"service.version", Version,
 		"trace.id", tracing.TraceID(),
@@ -76,14 +76,14 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
+	app, cleanup, err := initApp(&bc, logger)
 	if err != nil {
 		panic(err)
 	}
 	defer cleanup()
 
 	// start and wait for stop signal
-	if err := app.Run(); err != nil {
+	if err = app.Run(); err != nil {
 		panic(err)
 	}
 }
