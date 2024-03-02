@@ -2,6 +2,7 @@ NAME=$(shell basename `pwd`)
 VERSION=$(shell git describe --tags --always)
 INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
 API_PROTO_FILES=$(shell find api -name *.proto)
+GRPC_FILES=$(shell find api -name *.pb.go)
 ERROR_PROTO_FILES=$(shell find api -name errors.proto)
 
 .PHONY: init
@@ -28,7 +29,10 @@ api:
  	       --go_out=paths=source_relative:./api \
  	       --go-grpc_out=paths=source_relative:./api \
 	       --validate_out=paths=source_relative,lang=go:./api \
-	       $(API_PROTO_FILES)
+	       $(API_PROTO_FILES) && \
+    for file in $(GRPC_FILES); do \
+	  protoc-go-inject-tag -input $$file; \
+    done
 
 .PHONY: errors
 # generate errors proto
@@ -38,6 +42,11 @@ errors:
 		   --go_out=paths=source_relative:./api \
 		   --go-errors_out=paths=source_relative:./api \
 		   $(ERROR_PROTO_FILES)
+
+.PHONY: swag
+# generate swagger files
+swag:
+	swag fmt && swag init -g ./cmd/server/main.go
 
 .PHONY: build
 # build
